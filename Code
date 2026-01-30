@@ -65,4 +65,3 @@ if response.status_code == 200:
 else:
     print("Log file not found.")
     sys.exit(1)
-
